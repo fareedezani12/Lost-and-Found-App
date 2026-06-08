@@ -35,5 +35,29 @@ class ReportProvider extends ChangeNotifier {
 
   Future<void> deleteReport(String id) async {
     await _reportService.deleteReport(id);
+    notifyListeners();
+  }
+
+  Future<void> claimReport({
+    required String reportId,
+    required String ownerId,
+    required String claimerId,
+  }) async {
+    await _reportService.claimReport(
+      reportId: reportId,
+      ownerId: ownerId,
+      claimerId: claimerId,
+    );
+
+    notifyListeners();
+  }
+
+  Future<void> updateStatus({
+    required String reportId,
+    required String status,
+  }) async {
+    await _reportService.updateStatus(reportId: reportId, status: status);
+
+    notifyListeners();
   }
 }

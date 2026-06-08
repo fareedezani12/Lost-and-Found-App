@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../home/home_screen.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 /*import 'package:firebase_storage/firebase_storage.dart';*/
 
 class AddReportScreen extends StatefulWidget {
@@ -130,12 +131,23 @@ class _AddReportScreenState extends State<AddReportScreen> {
                     }*/
 
                     await FirebaseFirestore.instance.collection('reports').add({
+                      'userId': FirebaseAuth.instance.currentUser!.uid,
+
                       'title': titleController.text.trim(),
+
                       'description': descriptionController.text.trim(),
+
                       'category': category,
+
                       'location': locationController.text.trim(),
+
                       'isLost': reportType == "Lost",
+
                       'imageUrl': 'https://picsum.photos/300',
+
+                      // TAMBAH INI
+                      'status': 'Open',
+
                       'createdAt': FieldValue.serverTimestamp(),
                     });
 

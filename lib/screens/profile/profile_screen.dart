@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../auth/login_screen.dart';
+import 'my_reports_screen.dart';
+import 'claim_requests_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -35,7 +37,6 @@ class ProfileScreen extends StatelessWidget {
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
-
             child: Column(
               children: [
                 const SizedBox(height: 20),
@@ -85,21 +86,56 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 10),
+
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.description),
+                    title: const Text("My Reports"),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyReportsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.handshake),
+
+                    title: const Text("Claim Requests"),
+
+                    trailing: const Icon(Icons.arrow_forward_ios),
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ClaimRequestsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
                 const SizedBox(height: 30),
 
                 SizedBox(
                   width: double.infinity,
-
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.logout),
-
                     label: const Text("Logout"),
-
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
                     ),
-
                     onPressed: () async {
                       final confirm = await showDialog<bool>(
                         context: context,
