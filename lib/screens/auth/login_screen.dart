@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+
+import '../../providers/auth_provider.dart';
+
+import '../navigation/main_navigation.dart';
+import '../admin/admin_dashboard_screen.dart';
+
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
-import '../navigation/main_navigation.dart';
-import '../../providers/auth_provider.dart';
+
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
@@ -68,13 +77,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       password: passwordController.text.trim(),
                     );
 
-                    if (mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MainNavigation(),
-                        ),
-                      );
+                    final user = FirebaseAuth.instance.currentUser;
+
+                    if (user != null) {
+                      final doc = await FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(user.uid)
+                          .get();
+
+                      final data = doc.data();
+
+                      if (mounted) {
+                        if (data?["role"] == "admin") {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminDashboardScreen(),
+                            ),
+                          );
+                        } else {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MainNavigation(),
+                            ),
+                          );
+                        }
+                      }
                     }
                   } catch (e) {
                     ScaffoldMessenger.of(

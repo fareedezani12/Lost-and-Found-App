@@ -6,6 +6,9 @@ import '../../providers/report_provider.dart';
 import '../../widgets/item_card.dart';
 import '../report/add_report_screen.dart';
 import '../report/report_details_screen.dart';
+import '../notifications/notification_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,9 +53,63 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notifications_none),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection("notifications")
+                        .where(
+                          "userId",
+                          isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+                        )
+                        .where("isRead", isEqualTo: false)
+                        .snapshots(),
+
+                    builder: (context, snapshot) {
+                      final unreadCount = snapshot.hasData
+                          ? snapshot.data!.docs.length
+                          : 0;
+
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_none),
+
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationScreen(),
+                                ),
+                              );
+                            },
+                          ),
+
+                          if (unreadCount > 0)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+
+                                child: Text(
+                                  unreadCount.toString(),
+
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

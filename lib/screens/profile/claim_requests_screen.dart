@@ -140,6 +140,21 @@ class ClaimRequestsScreen extends StatelessWidget {
                                     .doc(data["reportId"])
                                     .update({"status": "Resolved"});
 
+                                await FirebaseFirestore.instance
+                                    .collection("notifications")
+                                    .add({
+                                      "userId": data["claimerId"],
+
+                                      "title": "Claim Approved",
+
+                                      "message":
+                                          "Your claim for '${data["title"]}' has been approved.",
+
+                                      "isRead": false,
+
+                                      "createdAt": FieldValue.serverTimestamp(),
+                                    });
+
                                 // Check if chat already exists
                                 final existingChat = await FirebaseFirestore
                                     .instance
@@ -204,6 +219,21 @@ class ClaimRequestsScreen extends StatelessWidget {
                                     .collection("reports")
                                     .doc(data["reportId"])
                                     .update({"status": "Open"});
+
+                                await FirebaseFirestore.instance
+                                    .collection("notifications")
+                                    .add({
+                                      "userId": data["claimerId"],
+
+                                      "title": "Claim Rejected",
+
+                                      "message":
+                                          "Your claim for '${data["title"]}' has been rejected.",
+
+                                      "isRead": false,
+
+                                      "createdAt": FieldValue.serverTimestamp(),
+                                    });
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
