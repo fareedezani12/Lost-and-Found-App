@@ -27,23 +27,39 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: pages[currentIndex],
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
 
-        onTap: (index) {
+        onDestinationSelected: (index) {
           setState(() {
             currentIndex = index;
           });
         },
 
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: "Home",
+          ),
 
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Explore"),
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: "Explore",
+          ),
 
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          NavigationDestination(
+            icon: Icon(Icons.chat_outlined),
+            selectedIcon: Icon(Icons.chat),
+            label: "Chat",
+          ),
 
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: "Profile",
+          ),
         ],
       ),
     );

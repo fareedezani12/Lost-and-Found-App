@@ -28,112 +28,172 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Row(
-                children: [
-                  const CircleAvatar(radius: 25, child: Icon(Icons.person)),
+              Container(
+                padding: const EdgeInsets.all(20),
 
-                  const SizedBox(width: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xff1565C0), Color(0xff42A5F5)],
+                  ),
 
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+
+                child: FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection("users")
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .get(),
+
+                  builder: (context, snapshot) {
+                    String username = "User";
+
+                    if (snapshot.hasData && snapshot.data!.exists) {
+                      final data =
+                          snapshot.data!.data() as Map<String, dynamic>;
+
+                      username = data["fullName"] ?? "User";
+                    }
+
+                    return Column(
                       children: [
-                        Text(
-                          "Welcome Back!",
-                          style: TextStyle(color: Colors.grey),
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.white,
+
+                              child: Icon(
+                                Icons.person,
+                                color: Color(0xff1565C0),
+                              ),
+                            ),
+
+                            const SizedBox(width: 15),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+
+                                children: [
+                                  const Text(
+                                    "Welcome Back 👋",
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+
+                                  Text(
+                                    username,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection("notifications")
+                                  .where(
+                                    "userId",
+                                    isEqualTo:
+                                        FirebaseAuth.instance.currentUser!.uid,
+                                  )
+                                  .where("isRead", isEqualTo: false)
+                                  .snapshots(),
+
+                              builder: (context, snapshot) {
+                                final unread = snapshot.hasData
+                                    ? snapshot.data!.docs.length
+                                    : 0;
+
+                                return Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: Colors.white,
+
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.notifications,
+                                          color: Color(0xff1565C0),
+                                        ),
+
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const NotificationScreen(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+
+                                    if (unread > 0)
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+
+                                          child: Text(
+                                            unread.toString(),
+
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                        Text(
-                          "User",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+
+                        const SizedBox(height: 20),
+
+                        TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              searchText = value.toLowerCase();
+                            });
+                          },
+
+                          decoration: InputDecoration(
+                            hintText: "Search lost item...",
+
+                            prefixIcon: const Icon(Icons.search),
+
+                            fillColor: Colors.white,
+
+                            filled: true,
+
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection("notifications")
-                        .where(
-                          "userId",
-                          isEqualTo: FirebaseAuth.instance.currentUser!.uid,
-                        )
-                        .where("isRead", isEqualTo: false)
-                        .snapshots(),
-
-                    builder: (context, snapshot) {
-                      final unreadCount = snapshot.hasData
-                          ? snapshot.data!.docs.length
-                          : 0;
-
-                      return Stack(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_none),
-
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const NotificationScreen(),
-                                ),
-                              );
-                            },
-                          ),
-
-                          if (unreadCount > 0)
-                            Positioned(
-                              right: 8,
-                              top: 8,
-
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-
-                                child: Text(
-                                  unreadCount.toString(),
-
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    searchText = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Search item...",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+                    );
+                  },
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
               Expanded(
                 child: StreamBuilder<List<ReportModel>>(
@@ -172,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             imageUrl: report.imageUrl.isEmpty
                                 ? "https://picsum.photos/200"
                                 : report.imageUrl,
+                            isLost: report.isLost,
                             onTap: () {
                               Navigator.push(
                                 context,

@@ -133,6 +133,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ? "https://picsum.photos/300"
                               : report.imageUrl,
 
+                          isLost: report.isLost,
+
                           onTap: () {
                             Navigator.push(
                               context,
