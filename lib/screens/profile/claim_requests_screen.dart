@@ -128,21 +128,58 @@ class ClaimRequestsScreen extends StatelessWidget {
                                 foregroundColor: Colors.white,
                               ),
                               onPressed: () async {
+                                // Update claim status
                                 await FirebaseFirestore.instance
                                     .collection("claims")
                                     .doc(claims[index].id)
                                     .update({"status": "Approved"});
 
+                                // Update report status
                                 await FirebaseFirestore.instance
                                     .collection("reports")
                                     .doc(data["reportId"])
                                     .update({"status": "Resolved"});
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Claim Approved"),
-                                  ),
-                                );
+                                // Check if chat already exists
+                                final existingChat = await FirebaseFirestore
+                                    .instance
+                                    .collection("chats")
+                                    .where(
+                                      "reportId",
+                                      isEqualTo: data["reportId"],
+                                    )
+                                    .get();
+
+                                if (existingChat.docs.isEmpty) {
+                                  await FirebaseFirestore.instance
+                                      .collection("chats")
+                                      .add({
+                                        "reportId": data["reportId"],
+                                        "title": data["title"],
+                                        "participants": [
+                                          data["ownerId"],
+                                          data["claimerId"],
+                                        ],
+
+                                        "lastMessage": "",
+
+                                        "lastMessageTime":
+                                            FieldValue.serverTimestamp(),
+
+                                        "createdAt":
+                                            FieldValue.serverTimestamp(),
+                                      });
+                                }
+
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Claim Approved & Chat Created",
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                             ),
                           ),
