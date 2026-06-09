@@ -1,136 +1,355 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'admin_report_details_screen.dart';
 
-class ManageReportsScreen extends StatelessWidget {
+class ManageReportsScreen extends StatefulWidget {
   const ManageReportsScreen({super.key});
+
+  @override
+  State<ManageReportsScreen> createState() => _ManageReportsScreenState();
+}
+
+class _ManageReportsScreenState extends State<ManageReportsScreen> {
+  String search = "";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Manage Reports")),
 
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("reports")
-            .orderBy("createdAt", descending: true)
-            .snapshots(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(15),
 
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Search reports...",
 
-          final reports = snapshot.data!.docs;
+                prefixIcon: const Icon(Icons.search),
 
-          if (reports.isEmpty) {
-            return const Center(child: Text("No Reports Found"));
-          }
+                filled: true,
 
-          return ListView.builder(
-            itemCount: reports.length,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
 
-            itemBuilder: (context, index) {
-              final data = reports[index].data() as Map<String, dynamic>;
+                  borderSide: BorderSide.none,
+                ),
+              ),
 
-              return Card(
-                margin: const EdgeInsets.all(10),
+              onChanged: (value) {
+                setState(() {
+                  search = value.toLowerCase();
+                });
+              },
+            ),
+          ),
 
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Icon(
-                      data["isLost"] == true
-                          ? Icons.search_off
-                          : Icons.check_circle,
-                    ),
-                  ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("reports")
+                  .orderBy("createdAt", descending: true)
+                  .snapshots(),
 
-                  title: Text(data["title"] ?? ""),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                var reports = snapshot.data!.docs;
 
-                    children: [
-                      Text(data["location"] ?? ""),
+                reports = reports.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
 
-                      const SizedBox(height: 5),
+                  final title = (data["title"] ?? "").toString().toLowerCase();
 
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                  final location = (data["location"] ?? "")
+                      .toString()
+                      .toLowerCase();
 
-                        decoration: BoxDecoration(
-                          color: data["isLost"] == true
-                              ? Colors.red
-                              : Colors.green,
+                  final category = (data["category"] ?? "")
+                      .toString()
+                      .toLowerCase();
 
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                  return title.contains(search) ||
+                      location.contains(search) ||
+                      category.contains(search);
+                }).toList();
 
-                        child: Text(
-                          data["isLost"] == true ? "LOST" : "FOUND",
+                if (reports.isEmpty) {
+                  return const Center(child: Text("No Reports Found"));
+                }
 
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                          ),
-                        ),
+                return ListView.builder(
+                  itemCount: reports.length,
+
+                  itemBuilder: (context, index) {
+                    final data = reports[index].data() as Map<String, dynamic>;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
                       ),
-                    ],
-                  ),
 
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                      elevation: 3,
 
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
 
-                        builder: (_) {
-                          return AlertDialog(
-                            title: const Text("Delete Report"),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
-                            content: const Text("Are you sure?"),
+                        children: [
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(18),
+                                ),
 
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, false);
-                                },
-                                child: const Text("No"),
+                                child: Image.network(
+                                  (data["imageUrl"] ?? "").toString().isNotEmpty
+                                      ? data["imageUrl"]
+                                      : "https://picsum.photos/500",
+
+                                  width: double.infinity,
+
+                                  height: 180,
+
+                                  fit: BoxFit.cover,
+                                ),
                               ),
 
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, true);
-                                },
-                                child: const Text("Yes"),
+                              Positioned(
+                                top: 10,
+                                right: 10,
+
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+
+                                  decoration: BoxDecoration(
+                                    color: data["isLost"] == true
+                                        ? Colors.red
+                                        : Colors.green,
+
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+
+                                  child: Text(
+                                    data["isLost"] == true ? "LOST" : "FOUND",
+
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
-                          );
-                        },
-                      );
+                          ),
 
-                      if (confirm == true) {
-                        await FirebaseFirestore.instance
-                            .collection("reports")
-                            .doc(reports[index].id)
-                            .delete();
+                          Padding(
+                            padding: const EdgeInsets.all(15),
 
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Report Deleted")),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                Text(
+                                  data["title"] ?? "",
+
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      size: 18,
+                                      color: Colors.grey,
+                                    ),
+
+                                    const SizedBox(width: 5),
+
+                                    Text(data["location"] ?? ""),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.category,
+                                      size: 18,
+                                      color: Colors.grey,
+                                    ),
+
+                                    const SizedBox(width: 5),
+
+                                    Text(data["category"] ?? ""),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+
+                                  decoration: BoxDecoration(
+                                    color: data["status"] == "Open"
+                                        ? Colors.green
+                                        : data["status"] == "Pending"
+                                        ? Colors.orange
+                                        : Colors.blue,
+
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+
+                                  child: Text(
+                                    data["status"] ?? "",
+
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 15),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        icon: const Icon(Icons.visibility),
+
+                                        label: const Text("View Details"),
+
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  AdminReportDetailsScreen(
+                                                    reportId: reports[index].id,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 10),
+
+                                    PopupMenuButton(
+                                      itemBuilder: (_) => const [
+                                        PopupMenuItem(
+                                          value: "edit",
+                                          child: ListTile(
+                                            leading: Icon(Icons.edit),
+                                            title: Text("Edit"),
+                                          ),
+                                        ),
+
+                                        PopupMenuItem(
+                                          value: "delete",
+                                          child: ListTile(
+                                            leading: Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            title: Text("Delete"),
+                                          ),
+                                        ),
+                                      ],
+
+                                      onSelected: (value) async {
+                                        if (value == "edit") {
+                                          // nanti kita buat AdminEditReportScreen
+                                        }
+
+                                        if (value == "delete") {
+                                          final confirm =
+                                              await showDialog<bool>(
+                                                context: context,
+
+                                                builder: (_) => AlertDialog(
+                                                  title: const Text(
+                                                    "Delete Report",
+                                                  ),
+
+                                                  content: const Text(
+                                                    "Delete this report?",
+                                                  ),
+
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          context,
+                                                          false,
+                                                        );
+                                                      },
+
+                                                      child: const Text(
+                                                        "Cancel",
+                                                      ),
+                                                    ),
+
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          context,
+                                                          true,
+                                                        );
+                                                      },
+
+                                                      child: const Text(
+                                                        "Delete",
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+
+                                          if (confirm == true) {
+                                            await FirebaseFirestore.instance
+                                                .collection("reports")
+                                                .doc(reports[index].id)
+                                                .delete();
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -72,6 +72,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
           'role': 'user',
 
+          'photoUrl': "",
+
           'createdAt': FieldValue.serverTimestamp(),
         });
       }

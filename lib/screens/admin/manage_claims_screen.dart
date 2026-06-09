@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'admin_claim_details_screen.dart';
 
-class ManageClaimsScreen extends StatelessWidget {
+class ManageClaimsScreen extends StatefulWidget {
   const ManageClaimsScreen({super.key});
+
+  @override
+  State<ManageClaimsScreen> createState() => _ManageClaimsScreenState();
+}
+
+class _ManageClaimsScreenState extends State<ManageClaimsScreen> {
+  String search = "";
 
   Color getStatusColor(String status) {
     switch (status) {
@@ -22,132 +30,241 @@ class ManageClaimsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Manage Claims")),
 
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("claims")
-            .orderBy("createdAt", descending: true)
-            .snapshots(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(15),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Search claim...",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  search = value.toLowerCase();
+                });
+              },
+            ),
+          ),
 
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("claims")
+                  .orderBy("createdAt", descending: true)
+                  .snapshots(),
 
-          final claims = snapshot.data!.docs;
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (claims.isEmpty) {
-            return const Center(child: Text("No Claims Found"));
-          }
+                var claims = snapshot.data!.docs;
 
-          return ListView.builder(
-            itemCount: claims.length,
+                claims = claims.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
 
-            itemBuilder: (context, index) {
-              final data = claims[index].data() as Map<String, dynamic>;
+                  final title = (data["title"] ?? "").toString().toLowerCase();
 
-              final status = data["status"] ?? "Pending";
+                  final claimer = (data["claimerName"] ?? "")
+                      .toString()
+                      .toLowerCase();
 
-              return Card(
-                margin: const EdgeInsets.all(10),
+                  return title.contains(search) || claimer.contains(search);
+                }).toList();
 
-                elevation: 3,
+                if (claims.isEmpty) {
+                  return const Center(child: Text("No Claims Found"));
+                }
 
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: getStatusColor(status),
+                return ListView.builder(
+                  itemCount: claims.length,
 
-                    child: const Icon(Icons.assignment, color: Colors.white),
-                  ),
+                  itemBuilder: (context, index) {
+                    final data = claims[index].data() as Map<String, dynamic>;
 
-                  title: Text(data["title"] ?? "Unknown Report"),
+                    final status = data["status"] ?? "Pending";
 
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
+                      ),
 
-                    children: [
-                      const SizedBox(height: 5),
+                      elevation: 3,
 
-                      Text("Claimer: ${data["claimerName"] ?? "-"}"),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
 
-                      Text("Email: ${data["claimerEmail"] ?? "-"}"),
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
 
-                      const SizedBox(height: 8),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 35,
 
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
+                                  backgroundImage:
+                                      (data["imageUrl"] ?? "")
+                                          .toString()
+                                          .isNotEmpty
+                                      ? NetworkImage(data["imageUrl"])
+                                      : null,
 
-                        decoration: BoxDecoration(
-                          color: getStatusColor(status),
+                                  child:
+                                      (data["imageUrl"] ?? "")
+                                          .toString()
+                                          .isEmpty
+                                      ? const Icon(Icons.inventory, size: 35)
+                                      : null,
+                                ),
 
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                                const SizedBox(width: 15),
 
-                        child: Text(
-                          status,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
 
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                                    children: [
+                                      Text(
+                                        data["title"] ?? "",
+
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 5),
+
+                                      Text(
+                                        "Claimer : ${data["claimerName"] ?? "-"}",
+                                      ),
+
+                                      Text(data["claimerEmail"] ?? ""),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            Align(
+                              alignment: Alignment.centerLeft,
+
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 6,
+                                ),
+
+                                decoration: BoxDecoration(
+                                  color: getStatusColor(status),
+
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+
+                                child: Text(
+                                  status,
+
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.visibility),
+
+                                    label: const Text("View Details"),
+
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              AdminClaimDetailsScreen(
+                                                claimId: claims[index].id,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                PopupMenuButton<String>(
+                                  onSelected: (value) async {
+                                    if (value == "approve") {
+                                      await FirebaseFirestore.instance
+                                          .collection("claims")
+                                          .doc(claims[index].id)
+                                          .update({"status": "Approved"});
+                                    }
+
+                                    if (value == "reject") {
+                                      await FirebaseFirestore.instance
+                                          .collection("claims")
+                                          .doc(claims[index].id)
+                                          .update({"status": "Rejected"});
+                                    }
+
+                                    if (value == "delete") {
+                                      await FirebaseFirestore.instance
+                                          .collection("claims")
+                                          .doc(claims[index].id)
+                                          .delete();
+                                    }
+                                  },
+
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: "approve",
+                                      child: Text("Approve"),
+                                    ),
+
+                                    const PopupMenuItem(
+                                      value: "reject",
+                                      child: Text("Reject"),
+                                    ),
+
+                                    const PopupMenuItem(
+                                      value: "delete",
+                                      child: Text("Delete"),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-
-                        builder: (_) {
-                          return AlertDialog(
-                            title: const Text("Delete Claim"),
-
-                            content: const Text("Delete this claim?"),
-
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, false);
-                                },
-                                child: const Text("No"),
-                              ),
-
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, true);
-                                },
-                                child: const Text("Yes"),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-
-                      if (confirm == true) {
-                        await FirebaseFirestore.instance
-                            .collection("claims")
-                            .doc(claims[index].id)
-                            .delete();
-
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Claim Deleted")),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
