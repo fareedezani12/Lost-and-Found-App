@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
+import '../../services/cloudinary_service.dart';
 import '../auth/login_screen.dart';
 import 'my_reports_screen.dart';
 import 'claim_requests_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -19,11 +27,11 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("My Profile")),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('users')
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("users")
             .doc(user.uid)
-            .get(),
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -39,16 +47,137 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () async {
+                    final picker = ImagePicker();
 
-                const CircleAvatar(
-                  radius: 60,
-                  child: Icon(Icons.person, size: 60),
+                    final image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 70,
+                    );
+
+                    if (image != null) {
+                      Uint8List bytes = await image.readAsBytes();
+
+                      final imageUrl = await CloudinaryService().uploadImage(
+                        bytes,
+                      );
+
+                      if (imageUrl != null) {
+                        await FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(user.uid)
+                            .update({"photoUrl": imageUrl});
+
+                        if (mounted) {
+                          setState(() {});
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Profile picture updated"),
+                          ),
+                        );
+                      }
+                    }
+                  },
+
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 55,
+
+                        backgroundImage:
+                            data["photoUrl"] != null && data["photoUrl"] != ""
+                            ? NetworkImage(data["photoUrl"])
+                            : null,
+
+                        backgroundColor: const Color(0xFF1565C0),
+
+                        child:
+                            data["photoUrl"] == null || data["photoUrl"] == ""
+                            ? Text(
+                                (data["fullName"] ?? "U")
+                                    .toString()
+                                    .substring(0, 1)
+                                    .toUpperCase(),
+
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 38,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
+                      ),
+
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
+
+                Text(
+                  data["fullName"] ?? "",
+
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  data["email"] ?? "",
+
+                  style: const TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+
+                const SizedBox(height: 25),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+
+                  child: Text(
+                    "Personal Information",
+
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+
                   child: ListTile(
                     leading: const Icon(Icons.person),
                     title: const Text("Full Name"),
@@ -59,6 +188,11 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.email),
                     title: const Text("Email"),
@@ -69,6 +203,11 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.phone),
                     title: const Text("Phone"),
@@ -79,6 +218,11 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.location_on),
                     title: const Text("Location"),
@@ -89,8 +233,16 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: ListTile(
-                    leading: const Icon(Icons.description),
+                    leading: const Icon(
+                      Icons.folder_copy,
+                      color: Color(0xFF1565C0),
+                    ),
                     title: const Text("My Reports"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -107,8 +259,13 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 Card(
+                  elevation: 3,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: ListTile(
-                    leading: const Icon(Icons.handshake),
+                    leading: const Icon(Icons.handshake, color: Colors.orange),
 
                     title: const Text("Claim Requests"),
 
@@ -135,6 +292,11 @@ class ProfileScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
+                      elevation: 3,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
                     ),
                     onPressed: () async {
                       final confirm = await showDialog<bool>(

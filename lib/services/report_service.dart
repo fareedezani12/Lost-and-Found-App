@@ -72,5 +72,22 @@ class ReportService {
     await firestore.collection("reports").doc(reportId).update({
       "status": "Pending",
     });
+
+    await firestore.collection("notifications").add({
+      "userId": ownerId,
+
+      "title": "New Claim Request",
+
+      "message":
+          "${user["fullName"]} has requested to claim your item '${report["title"]}'.",
+
+      "reportId": reportId,
+
+      "type": "claim",
+
+      "isRead": false,
+
+      "createdAt": FieldValue.serverTimestamp(),
+    });
   }
 }

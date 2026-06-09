@@ -59,14 +59,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius: 28,
-                              backgroundColor: Colors.white,
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection("users")
+                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                  .snapshots(),
 
-                              child: Icon(
-                                Icons.person,
-                                color: Color(0xff1565C0),
-                              ),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const CircleAvatar(
+                                    radius: 25,
+                                    child: Icon(Icons.person),
+                                  );
+                                }
+
+                                final data =
+                                    snapshot.data!.data()
+                                        as Map<String, dynamic>?;
+
+                                return CircleAvatar(
+                                  radius: 25,
+
+                                  backgroundImage:
+                                      data?["photoUrl"] != null &&
+                                          data?["photoUrl"] != ""
+                                      ? NetworkImage(data!["photoUrl"])
+                                      : null,
+
+                                  child:
+                                      data?["photoUrl"] == null ||
+                                          data?["photoUrl"] == ""
+                                      ? const Icon(Icons.person)
+                                      : null,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 15),

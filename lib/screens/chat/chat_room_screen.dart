@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../profile/user_profile_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String chatId;
   final String title;
+  final String otherUserId;
 
-  const ChatRoomScreen({super.key, required this.chatId, required this.title});
+  const ChatRoomScreen({
+    super.key,
+    required this.chatId,
+    required this.title,
+    required this.otherUserId,
+  });
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -61,7 +68,101 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(centerTitle: true, title: Text(widget.title)),
+      backgroundColor: Colors.grey.shade100,
+
+      appBar: AppBar(
+        elevation: 1,
+
+        title: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection("chats")
+              .doc(widget.chatId)
+              .get(),
+          builder: (context, chatSnapshot) {
+            if (!chatSnapshot.hasData) {
+              return const Text("Loading...");
+            }
+
+            final chatData = chatSnapshot.data!.data() as Map<String, dynamic>;
+
+            final otherUserId = (chatData["participants"] as List).firstWhere(
+              (id) => id != FirebaseAuth.instance.currentUser!.uid,
+            );
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection("users")
+                  .doc(otherUserId)
+                  .get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return Row(
+                    children: const [
+                      CircleAvatar(child: Icon(Icons.person)),
+                      SizedBox(width: 10),
+                      Text("Loading..."),
+                    ],
+                  );
+                }
+
+                final user = userSnapshot.data!.data() as Map<String, dynamic>;
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UserProfileScreen(userId: otherUserId),
+                      ),
+                    );
+                  },
+
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+
+                        backgroundImage:
+                            user["photoUrl"] != null && user["photoUrl"] != ""
+                            ? NetworkImage(user["photoUrl"])
+                            : null,
+
+                        child:
+                            user["photoUrl"] == null || user["photoUrl"] == ""
+                            ? const Icon(Icons.person)
+                            : null,
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+                            Text(
+                              user["fullName"] ?? "User",
+                              style: const TextStyle(fontSize: 17),
+                            ),
+
+                            const Text(
+                              "Tap to view profile",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
 
       body: SafeArea(
         child: Column(
@@ -99,6 +200,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ),
                     );
                   }
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (scrollController.hasClients) {
+                      scrollController.jumpTo(
+                        scrollController.position.maxScrollExtent,
+                      );
+                    }
+                  });
 
                   return ListView.builder(
                     controller: scrollController,
@@ -143,11 +252,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                data["message"],
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : Colors.black,
-                                ),
+                              Column(
+                                crossAxisAlignment: isMe
+                                    ? CrossAxisAlignment.end
+                                    : CrossAxisAlignment.start,
+
+                                children: [
+                                  Text(
+                                    data["message"],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  Text(
+                                    data["createdAt"] == null
+                                        ? ""
+                                        : TimeOfDay.fromDateTime(
+                                            (data["createdAt"] as Timestamp)
+                                                .toDate(),
+                                          ).format(context),
+
+                                    style: TextStyle(
+                                      color: isMe
+                                          ? Colors.white70
+                                          : Colors.grey,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
 
                               const SizedBox(height: 5),
@@ -210,11 +346,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
                   const SizedBox(width: 10),
 
-                  CircleAvatar(
-                    radius: 26,
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xff1565C0),
+                      shape: BoxShape.circle,
+                    ),
 
                     child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white),
+                      icon: const Icon(Icons.send_rounded, color: Colors.white),
 
                       onPressed: sendMessage,
                     ),

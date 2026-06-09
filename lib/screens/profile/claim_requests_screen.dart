@@ -134,12 +134,6 @@ class ClaimRequestsScreen extends StatelessWidget {
                                     .doc(claims[index].id)
                                     .update({"status": "Approved"});
 
-                                // Update report status
-                                await FirebaseFirestore.instance
-                                    .collection("reports")
-                                    .doc(data["reportId"])
-                                    .update({"status": "Resolved"});
-
                                 await FirebaseFirestore.instance
                                     .collection("notifications")
                                     .add({
@@ -150,10 +144,20 @@ class ClaimRequestsScreen extends StatelessWidget {
                                       "message":
                                           "Your claim for '${data["title"]}' has been approved.",
 
+                                      "reportId": data["reportId"],
+
+                                      "type": "approve",
+
                                       "isRead": false,
 
                                       "createdAt": FieldValue.serverTimestamp(),
                                     });
+
+                                // Update report status
+                                await FirebaseFirestore.instance
+                                    .collection("reports")
+                                    .doc(data["reportId"])
+                                    .update({"status": "Resolved"});
 
                                 // Check if chat already exists
                                 final existingChat = await FirebaseFirestore
@@ -216,11 +220,6 @@ class ClaimRequestsScreen extends StatelessWidget {
                                     .update({"status": "Rejected"});
 
                                 await FirebaseFirestore.instance
-                                    .collection("reports")
-                                    .doc(data["reportId"])
-                                    .update({"status": "Open"});
-
-                                await FirebaseFirestore.instance
                                     .collection("notifications")
                                     .add({
                                       "userId": data["claimerId"],
@@ -230,10 +229,19 @@ class ClaimRequestsScreen extends StatelessWidget {
                                       "message":
                                           "Your claim for '${data["title"]}' has been rejected.",
 
+                                      "reportId": data["reportId"],
+
+                                      "type": "reject",
+
                                       "isRead": false,
 
                                       "createdAt": FieldValue.serverTimestamp(),
                                     });
+
+                                await FirebaseFirestore.instance
+                                    .collection("reports")
+                                    .doc(data["reportId"])
+                                    .update({"status": "Open"});
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(

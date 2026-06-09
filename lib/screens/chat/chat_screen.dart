@@ -49,14 +49,65 @@ class ChatScreen extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 
                 child: ListTile(
-                  leading: const CircleAvatar(
-                    radius: 28,
-                    child: Icon(Icons.chat),
+                  leading: FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection("users")
+                        .doc(
+                          (data["participants"] as List).firstWhere(
+                            (id) =>
+                                id != FirebaseAuth.instance.currentUser!.uid,
+                          ),
+                        )
+                        .get(),
+
+                    builder: (context, userSnapshot) {
+                      if (!userSnapshot.hasData) {
+                        return const CircleAvatar(child: Icon(Icons.person));
+                      }
+
+                      final userData =
+                          userSnapshot.data!.data() as Map<String, dynamic>;
+
+                      return CircleAvatar(
+                        backgroundImage:
+                            userData["photoUrl"] != null &&
+                                userData["photoUrl"] != ""
+                            ? NetworkImage(userData["photoUrl"])
+                            : null,
+
+                        child:
+                            userData["photoUrl"] == null ||
+                                userData["photoUrl"] == ""
+                            ? const Icon(Icons.person)
+                            : null,
+                      );
+                    },
                   ),
 
-                  title: Text(
-                    data["title"] ?? "",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  title: FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection("users")
+                        .doc(
+                          (data["participants"] as List).firstWhere(
+                            (id) =>
+                                id != FirebaseAuth.instance.currentUser!.uid,
+                          ),
+                        )
+                        .get(),
+
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Text("Loading...");
+                      }
+
+                      final user =
+                          snapshot.data!.data() as Map<String, dynamic>;
+
+                      return Text(
+                        user["fullName"] ?? "User",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
 
                   subtitle: Text(
@@ -71,14 +122,23 @@ class ChatScreen extends StatelessWidget {
                   ),
 
                   onTap: () {
+                    final currentUid = FirebaseAuth.instance.currentUser!.uid;
+
+                    final participants = List<String>.from(
+                      data["participants"],
+                    );
+
+                    final otherUserId = participants.firstWhere(
+                      (id) => id != currentUid,
+                    );
+
                     Navigator.push(
                       context,
-
                       MaterialPageRoute(
                         builder: (_) => ChatRoomScreen(
                           chatId: chats[index].id,
-
                           title: data["title"],
+                          otherUserId: otherUserId,
                         ),
                       ),
                     );
