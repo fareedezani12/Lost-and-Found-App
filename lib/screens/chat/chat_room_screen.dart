@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../profile/user_profile_screen.dart';
+import '../../models/report_model.dart';
+import '../report/report_details_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String chatId;
@@ -23,6 +25,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController messageController = TextEditingController();
 
   final ScrollController scrollController = ScrollController();
+
+  String getDateLabel(DateTime date) {
+    final now = DateTime.now();
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final messageDay = DateTime(date.year, date.month, date.day);
+
+    if (messageDay == today) {
+      return "Today";
+    }
+
+    if (messageDay == yesterday) {
+      return "Yesterday";
+    }
+
+    return "${date.day}/${date.month}/${date.year}";
+  }
 
   Future<void> sendMessage() async {
     final text = messageController.text.trim();
@@ -162,6 +184,452 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             );
           },
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == "report") {
+                final chatDoc = await FirebaseFirestore.instance
+                    .collection("chats")
+                    .doc(widget.chatId)
+                    .get();
+
+                final chatData = chatDoc.data()!;
+
+                final reportId = chatData["reportId"];
+
+                final reportDoc = await FirebaseFirestore.instance
+                    .collection("reports")
+                    .doc(reportId)
+                    .get();
+
+                if (!reportDoc.exists) return;
+
+                final report = ReportModel.fromFirestore(
+                  reportDoc.id,
+                  reportDoc.data()!,
+                );
+
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReportDetailsScreen(report: report),
+                    ),
+                  );
+                }
+              }
+
+              if (value == "block") {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(25),
+                    ),
+                  ),
+
+                  builder: (_) {
+                    return Padding(
+                      padding: const EdgeInsets.all(20),
+
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          const CircleAvatar(
+                            radius: 35,
+                            backgroundColor: Colors.red,
+                            child: Icon(
+                              Icons.block,
+                              color: Colors.white,
+                              size: 35,
+                            ),
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          const Text(
+                            "Block User",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          const Text(
+                            "After blocking this user:\n\n"
+                            "• You will no longer receive messages.\n"
+                            "• This chat will be hidden.\n"
+                            "• You can unblock later from Settings.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 15),
+                          ),
+
+                          const SizedBox(height: 25),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 15,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+
+                                  child: const Text("Cancel"),
+                                ),
+                              ),
+
+                              const SizedBox(width: 15),
+
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.block),
+
+                                  label: const Text("Block"),
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 15,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+
+                                  onPressed: () async {
+                                    final chatDoc = await FirebaseFirestore
+                                        .instance
+                                        .collection("chats")
+                                        .doc(widget.chatId)
+                                        .get();
+
+                                    final chatData = chatDoc.data()!;
+
+                                    final otherUserId =
+                                        (chatData["participants"] as List)
+                                            .firstWhere(
+                                              (id) =>
+                                                  id !=
+                                                  FirebaseAuth
+                                                      .instance
+                                                      .currentUser!
+                                                      .uid,
+                                            );
+
+                                    await FirebaseFirestore.instance
+                                        .collection("blocked_users")
+                                        .add({
+                                          "blockerId": FirebaseAuth
+                                              .instance
+                                              .currentUser!
+                                              .uid,
+
+                                          "blockedId": otherUserId,
+
+                                          "createdAt":
+                                              FieldValue.serverTimestamp(),
+                                        });
+
+                                    Navigator.pop(context);
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "User blocked successfully.",
+                                          ),
+                                        ),
+                                      );
+
+                                      Navigator.pop(
+                                        context,
+                                      ); // keluar dari chat
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }
+
+              if (value == "reportUser") {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(25),
+                    ),
+                  ),
+
+                  builder: (_) {
+                    String selectedReason = "";
+
+                    return StatefulBuilder(
+                      builder: (context, setModalState) {
+                        return Padding(
+                          padding: const EdgeInsets.all(20),
+
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 5,
+
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade400,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              const Icon(
+                                Icons.flag_circle,
+                                size: 60,
+                                color: Colors.orange,
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              const Text(
+                                "Report User",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              const Text(
+                                "Select a reason for reporting this user.",
+                                textAlign: TextAlign.center,
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              RadioListTile(
+                                value: "Fake Claim",
+                                groupValue: selectedReason,
+
+                                title: const Text("Fake Claim"),
+
+                                secondary: const Icon(Icons.assignment_late),
+
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    selectedReason = value!;
+                                  });
+                                },
+                              ),
+
+                              RadioListTile(
+                                value: "Spam",
+                                groupValue: selectedReason,
+
+                                title: const Text("Spam"),
+
+                                secondary: const Icon(Icons.sms_failed),
+
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    selectedReason = value!;
+                                  });
+                                },
+                              ),
+
+                              RadioListTile(
+                                value: "Harassment",
+                                groupValue: selectedReason,
+
+                                title: const Text("Harassment"),
+
+                                secondary: const Icon(Icons.warning),
+
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    selectedReason = value!;
+                                  });
+                                },
+                              ),
+
+                              RadioListTile(
+                                value: "Scam",
+                                groupValue: selectedReason,
+
+                                title: const Text("Scam"),
+
+                                secondary: const Icon(Icons.gpp_bad),
+
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    selectedReason = value!;
+                                  });
+                                },
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              SizedBox(
+                                width: double.infinity,
+
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.flag),
+
+                                  label: const Text("Submit Report"),
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 15,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+
+                                  onPressed: () async {
+                                    if (selectedReason.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please select a reason.",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    final chatDoc = await FirebaseFirestore
+                                        .instance
+                                        .collection("chats")
+                                        .doc(widget.chatId)
+                                        .get();
+
+                                    final chatData = chatDoc.data()!;
+
+                                    final otherUserId =
+                                        (chatData["participants"] as List)
+                                            .firstWhere(
+                                              (id) =>
+                                                  id !=
+                                                  FirebaseAuth
+                                                      .instance
+                                                      .currentUser!
+                                                      .uid,
+                                            );
+
+                                    await FirebaseFirestore.instance
+                                        .collection("user_reports")
+                                        .add({
+                                          "reporterId": FirebaseAuth
+                                              .instance
+                                              .currentUser!
+                                              .uid,
+
+                                          "reportedUserId": otherUserId,
+
+                                          "chatId": widget.chatId,
+
+                                          "reason": selectedReason,
+
+                                          "status": "Pending",
+
+                                          "createdAt":
+                                              FieldValue.serverTimestamp(),
+                                        });
+
+                                    Navigator.pop(context);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Report submitted successfully.",
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              }
+            },
+
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: "report",
+                child: ListTile(
+                  leading: Icon(Icons.description),
+                  title: Text("View Report"),
+                ),
+              ),
+
+              const PopupMenuItem(
+                value: "block",
+                child: ListTile(
+                  leading: Icon(Icons.block),
+                  title: Text("Block User"),
+                ),
+              ),
+
+              const PopupMenuItem(
+                value: "reportUser",
+                child: ListTile(
+                  leading: Icon(Icons.flag),
+                  title: Text("Report User"),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
 
       body: SafeArea(
@@ -222,90 +690,140 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
                       final isMe = data["senderId"] == uid;
 
-                      return Align(
-                        alignment: isMe
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
+                      final currentDate = data["createdAt"] == null
+                          ? DateTime.now()
+                          : (data["createdAt"] as Timestamp).toDate();
 
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 280),
+                      bool showDate = false;
 
-                          margin: const EdgeInsets.only(bottom: 10),
+                      if (index == 0) {
+                        showDate = true;
+                      } else {
+                        final previous =
+                            messages[index - 1].data() as Map<String, dynamic>;
 
-                          padding: const EdgeInsets.all(14),
+                        final previousDate = previous["createdAt"] == null
+                            ? DateTime.now()
+                            : (previous["createdAt"] as Timestamp).toDate();
 
-                          decoration: BoxDecoration(
-                            color: isMe ? Colors.blue : Colors.grey.shade200,
+                        showDate =
+                            currentDate.day != previousDate.day ||
+                            currentDate.month != previousDate.month ||
+                            currentDate.year != previousDate.year;
+                      }
 
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(18),
-
-                              topRight: const Radius.circular(18),
-
-                              bottomLeft: Radius.circular(isMe ? 18 : 0),
-
-                              bottomRight: Radius.circular(isMe ? 0 : 18),
+                      return Column(
+                        children: [
+                          if (showDate)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 15,
+                                    vertical: 7,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    getDateLabel(currentDate),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
 
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Column(
-                                crossAxisAlignment: isMe
-                                    ? CrossAxisAlignment.end
-                                    : CrossAxisAlignment.start,
+                          Align(
+                            alignment: isMe
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
 
-                                children: [
-                                  Text(
-                                    data["message"],
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 280),
 
-                                  const SizedBox(height: 6),
+                              margin: const EdgeInsets.only(bottom: 10),
 
-                                  Text(
-                                    data["createdAt"] == null
-                                        ? ""
-                                        : TimeOfDay.fromDateTime(
-                                            (data["createdAt"] as Timestamp)
-                                                .toDate(),
-                                          ).format(context),
+                              padding: const EdgeInsets.all(14),
 
-                                    style: TextStyle(
-                                      color: isMe
-                                          ? Colors.white70
-                                          : Colors.grey,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
+                              decoration: BoxDecoration(
+                                color: isMe
+                                    ? Colors.blue
+                                    : Colors.grey.shade200,
+
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(18),
+                                  topRight: const Radius.circular(18),
+                                  bottomLeft: Radius.circular(isMe ? 18 : 0),
+                                  bottomRight: Radius.circular(isMe ? 0 : 18),
+                                ),
                               ),
 
-                              const SizedBox(height: 5),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: isMe
+                                        ? CrossAxisAlignment.end
+                                        : CrossAxisAlignment.start,
 
-                              if (isMe)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      (data["isSeen"] ?? false)
-                                          ? Icons.done_all
-                                          : Icons.done,
-                                      size: 16,
-                                      color: (data["isSeen"] ?? false)
-                                          ? Colors.lightBlueAccent
-                                          : Colors.white70,
+                                    children: [
+                                      Text(
+                                        data["message"],
+                                        style: TextStyle(
+                                          color: isMe
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 6),
+
+                                      Text(
+                                        data["createdAt"] == null
+                                            ? ""
+                                            : TimeOfDay.fromDateTime(
+                                                (data["createdAt"] as Timestamp)
+                                                    .toDate(),
+                                              ).format(context),
+
+                                        style: TextStyle(
+                                          color: isMe
+                                              ? Colors.white70
+                                              : Colors.grey,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 5),
+
+                                  if (isMe)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          (data["isSeen"] ?? false)
+                                              ? Icons.done_all
+                                              : Icons.done,
+                                          size: 16,
+                                          color: (data["isSeen"] ?? false)
+                                              ? Colors.lightBlueAccent
+                                              : Colors.white70,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                            ],
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       );
                     },
                   );

@@ -45,105 +45,121 @@ class ChatScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = chats[index].data() as Map<String, dynamic>;
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              final currentUid = FirebaseAuth.instance.currentUser!.uid;
 
-                child: ListTile(
-                  leading: FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection("users")
-                        .doc(
-                          (data["participants"] as List).firstWhere(
-                            (id) =>
-                                id != FirebaseAuth.instance.currentUser!.uid,
-                          ),
-                        )
-                        .get(),
+              final otherUserId = (data["participants"] as List).firstWhere(
+                (id) => id != currentUid,
+              );
 
-                    builder: (context, userSnapshot) {
-                      if (!userSnapshot.hasData) {
-                        return const CircleAvatar(child: Icon(Icons.person));
-                      }
+              return FutureBuilder<QuerySnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection("blocked_users")
+                    .where("blockerId", isEqualTo: currentUid)
+                    .where("blockedId", isEqualTo: otherUserId)
+                    .get(),
 
-                      final userData =
-                          userSnapshot.data!.data() as Map<String, dynamic>;
+                builder: (context, blockedSnapshot) {
+                  if (!blockedSnapshot.hasData) {
+                    return const SizedBox();
+                  }
 
-                      return CircleAvatar(
-                        backgroundImage:
-                            userData["photoUrl"] != null &&
-                                userData["photoUrl"] != ""
-                            ? NetworkImage(userData["photoUrl"])
-                            : null,
+                  if (blockedSnapshot.data!.docs.isNotEmpty) {
+                    return const SizedBox();
+                  }
 
-                        child:
-                            userData["photoUrl"] == null ||
-                                userData["photoUrl"] == ""
-                            ? const Icon(Icons.person)
-                            : null,
-                      );
-                    },
-                  ),
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
 
-                  title: FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection("users")
-                        .doc(
-                          (data["participants"] as List).firstWhere(
-                            (id) =>
-                                id != FirebaseAuth.instance.currentUser!.uid,
-                          ),
-                        )
-                        .get(),
+                    child: ListTile(
+                      leading: FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(otherUserId)
+                            .get(),
 
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Text("Loading...");
-                      }
+                        builder: (context, userSnapshot) {
+                          if (!userSnapshot.hasData) {
+                            return const CircleAvatar(
+                              child: Icon(Icons.person),
+                            );
+                          }
 
-                      final user =
-                          snapshot.data!.data() as Map<String, dynamic>;
+                          final userData =
+                              userSnapshot.data!.data() as Map<String, dynamic>;
 
-                      return Text(
-                        user["fullName"] ?? "User",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
+                          return CircleAvatar(
+                            backgroundImage:
+                                userData["photoUrl"] != null &&
+                                    userData["photoUrl"] != ""
+                                ? NetworkImage(userData["photoUrl"])
+                                : null,
 
-                  subtitle: Text(
-                    data["lastMessage"] ?? "No messages",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  trailing: Text(
-                    formatTime(data["lastMessageTime"]),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-
-                  onTap: () {
-                    final currentUid = FirebaseAuth.instance.currentUser!.uid;
-
-                    final participants = List<String>.from(
-                      data["participants"],
-                    );
-
-                    final otherUserId = participants.firstWhere(
-                      (id) => id != currentUid,
-                    );
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatRoomScreen(
-                          chatId: chats[index].id,
-                          title: data["title"],
-                          otherUserId: otherUserId,
-                        ),
+                            child:
+                                userData["photoUrl"] == null ||
+                                    userData["photoUrl"] == ""
+                                ? const Icon(Icons.person)
+                                : null,
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+
+                      title: FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(otherUserId)
+                            .get(),
+
+                        builder: (context, userSnapshot) {
+                          if (!userSnapshot.hasData) {
+                            return const Text("Loading...");
+                          }
+
+                          final user =
+                              userSnapshot.data!.data() as Map<String, dynamic>;
+
+                          return Text(
+                            user["fullName"] ?? "User",
+
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
+
+                      subtitle: Text(
+                        data["lastMessage"] ?? "No messages",
+
+                        maxLines: 1,
+
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      trailing: Text(
+                        formatTime(data["lastMessageTime"]),
+
+                        style: const TextStyle(fontSize: 12),
+                      ),
+
+                      onTap: () {
+                        Navigator.push(
+                          context,
+
+                          MaterialPageRoute(
+                            builder: (_) => ChatRoomScreen(
+                              chatId: chats[index].id,
+
+                              title: data["title"],
+
+                              otherUserId: otherUserId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           );

@@ -8,6 +8,7 @@ import '../../services/cloudinary_service.dart';
 import '../auth/login_screen.dart';
 import 'my_reports_screen.dart';
 import 'claim_requests_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -29,9 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(title: const Text("My Profile")),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
-            .collection("users")
+            .collection('users')
             .doc(user.uid)
             .snapshots(),
+
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -231,6 +233,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
 
                 const SizedBox(height: 10),
+
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.edit, color: Colors.blue),
+
+                    title: const Text("Edit Profile"),
+
+                    trailing: const Icon(Icons.arrow_forward_ios),
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EditProfileScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
                 Card(
                   elevation: 3,
