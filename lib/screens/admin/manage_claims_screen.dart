@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_claim_details_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ManageClaimsScreen extends StatefulWidget {
   const ManageClaimsScreen({super.key});
@@ -28,7 +29,10 @@ class _ManageClaimsScreenState extends State<ManageClaimsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Manage Claims")),
+      appBar: const CustomHeader(
+        title: "Manage Claims",
+        subtitle: "Review all claim requests",
+      ),
 
       body: Column(
         children: [

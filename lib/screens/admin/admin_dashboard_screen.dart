@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import '../auth/login_screen.dart';
 import 'manage_users_screen.dart';
 import 'manage_reports_screen.dart';
 import 'manage_claims_screen.dart';
@@ -313,21 +314,6 @@ class AdminDashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FA),
 
-      appBar: AppBar(
-        elevation: 0,
-
-        centerTitle: true,
-
-        backgroundColor: Colors.white,
-
-        foregroundColor: Colors.black,
-
-        title: const Text(
-          "Admin Dashboard",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
 
@@ -343,31 +329,129 @@ class AdminDashboardScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xff1565C0), Color(0xff42A5F5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
 
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(25),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.25),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
 
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
 
-                children: const [
-                  Text(
-                    "Welcome Admin 👋",
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
 
-                    style: TextStyle(
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+
+                    child: Image.asset(
+                      "assets/images/lost-and-found-app-logo.png",
+                      width: 45,
+                      height: 45,
                     ),
                   ),
 
-                  SizedBox(height: 8),
+                  const SizedBox(width: 18),
 
-                  Text(
-                    "Manage your Lost & Found System efficiently",
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
-                    style: TextStyle(color: Colors.white70, fontSize: 15),
+                      children: [
+                        Text(
+                          "Lost & Found",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        SizedBox(height: 4),
+
+                        Text(
+                          "Management System",
+                          style: TextStyle(color: Colors.white70, fontSize: 17),
+                        ),
+
+                        SizedBox(height: 10),
+
+                        Text(
+                          "Administrator Panel",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+
+                        child: IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white),
+
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text("Logout"),
+                                content: const Text(
+                                  "Are you sure you want to logout?",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text("Cancel"),
+                                  ),
+
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text("Logout"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await FirebaseAuth.instance.signOut();
+
+                              if (context.mounted) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -547,6 +631,61 @@ class AdminDashboardScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
+
+            const SizedBox(height: 30),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text("Logout"),
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text("Logout"),
+                      content: const Text("Are you sure you want to logout?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                          },
+                          child: const Text("No"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
+                          child: const Text("Yes"),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    await FirebaseAuth.instance.signOut();
+
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
 
             /*const Text(
               "Recent Activities",

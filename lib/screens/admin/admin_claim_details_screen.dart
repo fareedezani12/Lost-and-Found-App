@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_report_details_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class AdminClaimDetailsScreen extends StatelessWidget {
   final String claimId;
@@ -21,7 +22,10 @@ class AdminClaimDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Claim Details")),
+      appBar: const CustomHeader(
+        title: "Explore",
+        subtitle: "Find Your Lost Item Here",
+      ),
 
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance

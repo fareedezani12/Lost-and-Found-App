@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class UserProfileScreen extends StatelessWidget {
   final String userId;
@@ -9,7 +10,11 @@ class UserProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("User Profile")),
+      appBar: const CustomHeader(
+        title: "User Profile",
+        subtitle: "User Profile here",
+        showBackButton: false,
+      ),
 
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance

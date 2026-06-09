@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
@@ -209,7 +210,10 @@ class AnalyticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(centerTitle: true, title: const Text("System Analytics")),
+      appBar: const CustomHeader(
+        title: "Analytics",
+        subtitle: "System statistics and charts",
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

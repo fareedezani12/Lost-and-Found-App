@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ManageUsersScreen extends StatefulWidget {
   const ManageUsersScreen({super.key});
@@ -14,7 +15,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Manage Users"), centerTitle: true),
+      appBar: const CustomHeader(
+        title: "Manage Users",
+        subtitle: "View and manage all users",
+      ),
 
       body: Column(
         children: [

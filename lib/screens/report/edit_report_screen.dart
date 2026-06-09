@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../models/report_model.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class EditReportScreen extends StatefulWidget {
   final ReportModel report;
@@ -33,7 +34,10 @@ class _EditReportScreenState extends State<EditReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Report")),
+      appBar: const CustomHeader(
+        title: "Edit Report",
+        subtitle: "Edit and Update your Report here",
+      ),
 
       body: Padding(
         padding: const EdgeInsets.all(20),

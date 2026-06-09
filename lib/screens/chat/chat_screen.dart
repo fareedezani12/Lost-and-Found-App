@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../widgets/custom_app_bar.dart';
 
 import 'chat_room_screen.dart';
 
@@ -20,7 +21,11 @@ class ChatScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Chats")),
+      appBar: const CustomHeader(
+        title: "Chats",
+        subtitle: "List of your Chats",
+        showBackButton: false,
+      ),
 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance

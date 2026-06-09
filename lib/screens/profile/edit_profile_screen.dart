@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/cloudinary_service.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -115,7 +116,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profile")),
+      appBar: const CustomHeader(
+        title: "Edit Report",
+        subtitle: "Adjust and Update Report here",
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../services/cloudinary_service.dart';
 import '../home/home_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class AddReportScreen extends StatefulWidget {
   const AddReportScreen({super.key});
@@ -118,7 +119,10 @@ class _AddReportScreenState extends State<AddReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Report")),
+      appBar: const CustomHeader(
+        title: "Add Report",
+        subtitle: "Found Something or Lost Something?",
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

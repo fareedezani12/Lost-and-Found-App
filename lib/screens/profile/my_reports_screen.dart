@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../report/report_details_screen.dart';
 import '../../models/report_model.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class MyReportsScreen extends StatelessWidget {
   const MyReportsScreen({super.key});
@@ -13,7 +14,10 @@ class MyReportsScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Reports")),
+      appBar: const CustomHeader(
+        title: "My Report",
+        subtitle: "List of Your Reports",
+      ),
 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance

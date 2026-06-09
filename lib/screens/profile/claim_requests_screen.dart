@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ClaimRequestsScreen extends StatelessWidget {
   const ClaimRequestsScreen({super.key});
@@ -10,7 +11,10 @@ class ClaimRequestsScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Claim Requests")),
+      appBar: const CustomHeader(
+        title: "Claim Request",
+        subtitle: "List of Your Claim Request",
+      ),
 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance

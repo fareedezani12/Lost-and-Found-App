@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/report_model.dart';
 import '../../providers/report_provider.dart';
 import 'edit_report_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ReportDetailsScreen extends StatelessWidget {
   final ReportModel report;
@@ -33,7 +34,10 @@ class ReportDetailsScreen extends StatelessWidget {
     final bool isOwner =
         currentUser != null && currentUser.uid == report.userId;
     return Scaffold(
-      appBar: AppBar(title: const Text("Report Details")),
+      appBar: const CustomHeader(
+        title: "Report Details",
+        subtitle: "Details of Item",
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_report_details_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ManageReportsScreen extends StatefulWidget {
   const ManageReportsScreen({super.key});
@@ -15,7 +16,10 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Manage Reports")),
+      appBar: const CustomHeader(
+        title: "Manage Reports",
+        subtitle: "View and manage all reports",
+      ),
 
       body: Column(
         children: [

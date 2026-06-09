@@ -5,6 +5,7 @@ import '../../models/report_model.dart';
 import '../../providers/report_provider.dart';
 import '../../widgets/item_card.dart';
 import '../report/report_details_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -27,7 +28,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Explore"), centerTitle: true),
+      appBar: const CustomHeader(
+        title: "Explore",
+        subtitle: "Find Your Lost Item Here",
+        showBackButton: false,
+      ),
 
       body: Padding(
         padding: const EdgeInsets.all(16),

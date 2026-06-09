@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class AdminReportDetailsScreen extends StatelessWidget {
   final String reportId;
@@ -25,7 +26,10 @@ class AdminReportDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Report Details"), centerTitle: true),
+      appBar: const CustomHeader(
+        title: "Profile",
+        subtitle: "Edit and Update Your Information",
+      ),
 
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance

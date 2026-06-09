@@ -9,6 +9,7 @@ import '../auth/login_screen.dart';
 import 'my_reports_screen.dart';
 import 'claim_requests_screen.dart';
 import 'edit_profile_screen.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,7 +28,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Profile")),
+      appBar: const CustomHeader(
+        title: "Profile",
+        subtitle: "Edit and Update Your Information",
+        showBackButton: false,
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
