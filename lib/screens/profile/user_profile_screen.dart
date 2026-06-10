@@ -13,7 +13,6 @@ class UserProfileScreen extends StatelessWidget {
       appBar: const CustomHeader(
         title: "User Profile",
         subtitle: "User Profile here",
-        showBackButton: false,
       ),
 
       body: FutureBuilder<DocumentSnapshot>(
