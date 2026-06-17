@@ -10,6 +10,7 @@ import 'my_reports_screen.dart';
 import 'claim_requests_screen.dart';
 import 'edit_profile_screen.dart';
 import '../../widgets/custom_app_bar.dart';
+import 'my_claims_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -276,6 +277,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const MyReportsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.assignment_turned_in,
+                      color: Colors.green,
+                    ),
+
+                    title: const Text("My Claims"),
+
+                    trailing: const Icon(Icons.chevron_right),
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyClaimsScreen(),
                         ),
                       );
                     },

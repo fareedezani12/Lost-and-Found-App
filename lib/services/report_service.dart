@@ -50,7 +50,8 @@ class ReportService {
     final reportDoc = await firestore.collection("reports").doc(reportId).get();
 
     final userDoc = await firestore.collection("users").doc(claimerId).get();
-
+    final ownerDoc = await firestore.collection("users").doc(ownerId).get();
+    final owner = ownerDoc.data()!;
     final report = reportDoc.data()!;
     final user = userDoc.data()!;
 
@@ -61,7 +62,7 @@ class ReportService {
 
       "title": report["title"],
       "imageUrl": report["imageUrl"],
-
+      "ownerName": owner["fullName"],
       "claimerName": user["fullName"],
       "claimerEmail": user["email"],
 
