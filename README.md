@@ -96,6 +96,7 @@ lib/
 ## 👨‍💻 Developer
 
 **Muhammad Fareed bin Ezani**
+**Nurain Batrissya binti Yahya**
 
 Student of Subject Mobile Application Development DES3113
 
