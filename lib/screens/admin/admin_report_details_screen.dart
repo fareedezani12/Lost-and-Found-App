@@ -27,8 +27,8 @@ class AdminReportDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomHeader(
-        title: "Profile",
-        subtitle: "Edit and Update Your Information",
+        title: "Report Details",
+        subtitle: "View Report Information",
       ),
 
       body: FutureBuilder<DocumentSnapshot>(
@@ -213,20 +213,6 @@ class AdminReportDetailsScreen extends StatelessWidget {
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    SizedBox(
-                      width: double.infinity,
-
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.edit),
-
-                        label: const Text("Edit Report"),
-
-                        onPressed: () {},
                       ),
                     ),
 

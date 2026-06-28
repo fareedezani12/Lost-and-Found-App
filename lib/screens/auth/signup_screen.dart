@@ -23,6 +23,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
+  bool isLoading = false;
+
   @override
   void dispose() {
     nameController.dispose();
@@ -35,64 +37,138 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> signUp() async {
-    if (emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email and Password are required")),
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
+    final location = locationController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmPasswordController.text;
+
+    if (name.isEmpty) {
+      showMessage("Please enter your full name.");
+      return;
+    }
+
+    if (name.length < 3) {
+      showMessage("Full name must be at least 3 characters.");
+      return;
+    }
+
+    if (email.isEmpty) {
+      showMessage("Please enter your email.");
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+    if (!emailRegex.hasMatch(email)) {
+      showMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (phone.isEmpty) {
+      showMessage("Please enter your phone number.");
+      return;
+    }
+
+    if (location.isEmpty) {
+      showMessage("Please enter your location.");
+      return;
+    }
+
+    if (password.isEmpty) {
+      showMessage("Please enter a password.");
+      return;
+    }
+
+    final passwordRegex = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,20}$',
+    );
+
+    if (!passwordRegex.hasMatch(password)) {
+      showMessage(
+        "Password must be 8-20 characters and contain an uppercase letter, lowercase letter, number and special character.",
       );
       return;
     }
 
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+    if (password != confirmPassword) {
+      showMessage("Passwords do not match.");
       return;
     }
 
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       await context.read<AuthProvider>().signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+        email: email,
+        password: password,
       );
 
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-
-          'fullName': nameController.text.trim(),
-
-          'email': emailController.text.trim(),
-
-          'phone': phoneController.text.trim(),
-
-          'location': locationController.text.trim(),
-
-          'role': 'user',
-
-          'photoUrl': "",
-
-          'createdAt': FieldValue.serverTimestamp(),
+        await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+          "uid": user.uid,
+          "fullName": name,
+          "email": email,
+          "phone": phone,
+          "location": location,
+          "role": "user",
+          "photoUrl": "",
+          "createdAt": FieldValue.serverTimestamp(),
         });
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account Created Successfully")),
-        );
+      if (!mounted) return;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Account created successfully."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+
+      switch (e.code) {
+        case "email-already-in-use":
+          message = "This email is already registered.";
+          break;
+
+        case "weak-password":
+          message = "Password is too weak.";
+          break;
+
+        case "invalid-email":
+          message = "Invalid email address.";
+          break;
+
+        default:
+          message = "Registration failed. Please try again.";
+      }
+
+      showMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -115,17 +191,25 @@ class _SignupScreenState extends State<SignupScreen> {
               CustomTextField(
                 hintText: "Full Name",
                 controller: nameController,
+                prefixIcon: Icons.person_outline,
               ),
 
               const SizedBox(height: 15),
 
-              CustomTextField(hintText: "Email", controller: emailController),
+              CustomTextField(
+                hintText: "Email",
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: Icons.email_outlined,
+              ),
 
               const SizedBox(height: 15),
 
               CustomTextField(
                 hintText: "Phone Number",
                 controller: phoneController,
+                keyboardType: TextInputType.phone,
+                prefixIcon: Icons.phone_outlined,
               ),
 
               const SizedBox(height: 15),
@@ -133,27 +217,34 @@ class _SignupScreenState extends State<SignupScreen> {
               CustomTextField(
                 hintText: "Location",
                 controller: locationController,
+                prefixIcon: Icons.location_on_outlined,
               ),
 
               const SizedBox(height: 15),
 
               CustomTextField(
                 hintText: "Password",
-                obscureText: true,
                 controller: passwordController,
+                obscureText: true,
+                prefixIcon: Icons.lock_outline,
               ),
 
               const SizedBox(height: 15),
 
               CustomTextField(
                 hintText: "Confirm Password",
-                obscureText: true,
                 controller: confirmPasswordController,
+                obscureText: true,
+                prefixIcon: Icons.lock_outline,
+                textInputAction: TextInputAction.done,
               ),
 
               const SizedBox(height: 30),
 
-              CustomButton(text: "SIGN UP", onPressed: signUp),
+              CustomButton(
+                text: isLoading ? "Creating Account..." : "SIGN UP",
+                onPressed: isLoading ? null : signUp,
+              ),
 
               const SizedBox(height: 20),
 

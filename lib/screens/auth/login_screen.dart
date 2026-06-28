@@ -27,6 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool isLoading = false;
+  bool obscurePassword = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,14 +59,18 @@ class _LoginScreenState extends State<LoginScreen> {
               CustomTextField(
                 hintText: "example@gmail.com",
                 controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: Icons.email_outlined,
               ),
 
               const SizedBox(height: 20),
 
               CustomTextField(
-                hintText: "************",
-                obscureText: true,
+                hintText: "Password",
                 controller: passwordController,
+                obscureText: true,
+                prefixIcon: Icons.lock_outline,
+                textInputAction: TextInputAction.done,
               ),
 
               const SizedBox(height: 30),
@@ -71,13 +78,58 @@ class _LoginScreenState extends State<LoginScreen> {
               CustomButton(
                 text: "SIGN IN",
                 onPressed: () async {
+                  final email = emailController.text.trim();
+                  final password = passwordController.text.trim();
+
+                  // Empty validation
+                  if (email.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter your email."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter your password."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Email format validation
+                  final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+                  if (!emailRegex.hasMatch(email)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter a valid email address."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    isLoading = true;
+                  });
+
                   try {
                     await context.read<AuthProvider>().login(
-                      email: emailController.text.trim(),
-                      password: passwordController.text.trim(),
+                      email: email,
+                      password: password,
                     );
 
                     final user = FirebaseAuth.instance.currentUser;
+
+                    setState(() {
+                      isLoading = false;
+                    });
 
                     if (user != null) {
                       final doc = await FirebaseFirestore.instance
@@ -87,28 +139,79 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       final data = doc.data();
 
-                      if (mounted) {
-                        if (data?["role"] == "admin") {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AdminDashboardScreen(),
-                            ),
-                          );
-                        } else {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MainNavigation(),
-                            ),
-                          );
-                        }
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Login successful!"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+
+                      if (data?["role"] == "admin") {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminDashboardScreen(),
+                          ),
+                        );
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MainNavigation(),
+                          ),
+                        );
                       }
                     }
-                  } catch (e) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  } on FirebaseAuthException catch (e) {
+                    String message;
+
+                    switch (e.code) {
+                      case "user-not-found":
+                        message = "No account found with this email.";
+                        break;
+
+                      case "wrong-password":
+                        message = "Incorrect password.";
+                        break;
+
+                      case "invalid-email":
+                        message = "Please enter a valid email address.";
+                        break;
+
+                      case "invalid-credential":
+                        message = "Incorrect email or password.";
+                        break;
+
+                      case "user-disabled":
+                        message = "This account has been disabled.";
+                        break;
+
+                      case "too-many-requests":
+                        message =
+                            "Too many login attempts. Please try again later.";
+                        break;
+
+                      default:
+                        message = "Login failed. Please try again.";
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  } catch (_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Something went wrong. Please try again.",
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 },
               ),

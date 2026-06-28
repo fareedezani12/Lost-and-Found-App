@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ReportModel {
   final String id;
   final String userId;
@@ -8,6 +10,7 @@ class ReportModel {
   final bool isLost;
   final String imageUrl;
   final String status;
+  final Timestamp? createdAt;
 
   ReportModel({
     required this.id,
@@ -19,6 +22,7 @@ class ReportModel {
     required this.isLost,
     required this.imageUrl,
     required this.status,
+    required this.createdAt,
   });
 
   factory ReportModel.fromFirestore(String id, Map<String, dynamic> data) {
@@ -39,6 +43,7 @@ class ReportModel {
       imageUrl: data["imageUrl"] ?? "",
 
       status: data["status"] ?? "Open",
+      createdAt: data["createdAt"] as Timestamp?,
     );
   }
 
@@ -52,6 +57,7 @@ class ReportModel {
       "isLost": isLost,
       "imageUrl": imageUrl,
       "status": status,
+      "createdAt": createdAt,
     };
   }
 }

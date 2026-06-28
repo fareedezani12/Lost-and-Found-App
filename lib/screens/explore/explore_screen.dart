@@ -133,17 +133,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         child: ItemCard(
                           title: report.title,
                           location: report.location,
-
                           imageUrl: report.imageUrl.isEmpty
                               ? "https://picsum.photos/300"
                               : report.imageUrl,
-
                           isLost: report.isLost,
-
+                          createdAt: report.createdAt,
                           onTap: () {
                             Navigator.push(
                               context,
-
                               MaterialPageRoute(
                                 builder: (_) =>
                                     ReportDetailsScreen(report: report),

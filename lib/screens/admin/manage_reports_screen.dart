@@ -12,6 +12,7 @@ class ManageReportsScreen extends StatefulWidget {
 
 class _ManageReportsScreenState extends State<ManageReportsScreen> {
   String search = "";
+  String filter = "All";
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +50,48 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
             ),
           ),
 
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text("All"),
+                  selected: filter == "All",
+                  onSelected: (_) {
+                    setState(() {
+                      filter = "All";
+                    });
+                  },
+                ),
+
+                const SizedBox(width: 10),
+
+                ChoiceChip(
+                  label: const Text("Lost"),
+                  selected: filter == "Lost",
+                  onSelected: (_) {
+                    setState(() {
+                      filter = "Lost";
+                    });
+                  },
+                ),
+
+                const SizedBox(width: 10),
+
+                ChoiceChip(
+                  label: const Text("Found"),
+                  selected: filter == "Found",
+                  onSelected: (_) {
+                    setState(() {
+                      filter = "Found";
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -80,6 +123,20 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
                       location.contains(search) ||
                       category.contains(search);
                 }).toList();
+
+                if (filter == "Lost") {
+                  reports = reports.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return data["isLost"] == true;
+                  }).toList();
+                }
+
+                if (filter == "Found") {
+                  reports = reports.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return data["isLost"] == false;
+                  }).toList();
+                }
 
                 if (reports.isEmpty) {
                   return const Center(child: Text("No Reports Found"));
@@ -206,6 +263,32 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
                                   ],
                                 ),
 
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 18,
+                                      color: Colors.grey,
+                                    ),
+
+                                    const SizedBox(width: 5),
+
+                                    Text(
+                                      data["createdAt"] == null
+                                          ? "-"
+                                          : (data["createdAt"] as Timestamp)
+                                                .toDate()
+                                                .toString()
+                                                .substring(0, 16),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
                                 const SizedBox(height: 10),
 
                                 Container(
@@ -263,14 +346,6 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
                                     PopupMenuButton(
                                       itemBuilder: (_) => const [
                                         PopupMenuItem(
-                                          value: "edit",
-                                          child: ListTile(
-                                            leading: Icon(Icons.edit),
-                                            title: Text("Edit"),
-                                          ),
-                                        ),
-
-                                        PopupMenuItem(
                                           value: "delete",
                                           child: ListTile(
                                             leading: Icon(
@@ -283,10 +358,6 @@ class _ManageReportsScreenState extends State<ManageReportsScreen> {
                                       ],
 
                                       onSelected: (value) async {
-                                        if (value == "edit") {
-                                          // nanti kita buat AdminEditReportScreen
-                                        }
-
                                         if (value == "delete") {
                                           final confirm =
                                               await showDialog<bool>(

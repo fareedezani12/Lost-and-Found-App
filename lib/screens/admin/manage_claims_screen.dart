@@ -213,50 +213,6 @@ class _ManageClaimsScreenState extends State<ManageClaimsScreen> {
                                     },
                                   ),
                                 ),
-
-                                const SizedBox(width: 10),
-
-                                PopupMenuButton<String>(
-                                  onSelected: (value) async {
-                                    if (value == "approve") {
-                                      await FirebaseFirestore.instance
-                                          .collection("claims")
-                                          .doc(claims[index].id)
-                                          .update({"status": "Approved"});
-                                    }
-
-                                    if (value == "reject") {
-                                      await FirebaseFirestore.instance
-                                          .collection("claims")
-                                          .doc(claims[index].id)
-                                          .update({"status": "Rejected"});
-                                    }
-
-                                    if (value == "delete") {
-                                      await FirebaseFirestore.instance
-                                          .collection("claims")
-                                          .doc(claims[index].id)
-                                          .delete();
-                                    }
-                                  },
-
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: "approve",
-                                      child: Text("Approve"),
-                                    ),
-
-                                    const PopupMenuItem(
-                                      value: "reject",
-                                      child: Text("Reject"),
-                                    ),
-
-                                    const PopupMenuItem(
-                                      value: "delete",
-                                      child: Text("Delete"),
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
                           ],

@@ -4,9 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../navigation/main_navigation.dart';
 
 import '../../services/cloudinary_service.dart';
-import '../home/home_screen.dart';
 import '../../widgets/custom_app_bar.dart';
 
 class AddReportScreen extends StatefulWidget {
@@ -82,9 +82,10 @@ class _AddReportScreenState extends State<AddReportScreen> {
         const SnackBar(content: Text("Report saved successfully.")),
       );
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) return;

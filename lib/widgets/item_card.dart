@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/date_time_helper.dart';
 
 class ItemCard extends StatelessWidget {
   final String title;
   final String location;
   final String imageUrl;
   final bool isLost;
+  final Timestamp? createdAt;
   final VoidCallback? onTap;
 
   const ItemCard({
@@ -13,6 +16,7 @@ class ItemCard extends StatelessWidget {
     required this.location,
     required this.imageUrl,
     required this.isLost,
+    this.createdAt,
     this.onTap,
   });
 
@@ -136,6 +140,27 @@ class ItemCard extends StatelessWidget {
 
                           style: const TextStyle(color: Colors.grey),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+
+                          const SizedBox(width: 5),
+
+                          Text(
+                            "Posted ${DateTimeHelper.timeAgo(createdAt)}",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
