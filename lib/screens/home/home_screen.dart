@@ -259,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? "https://picsum.photos/200"
                                 : report.imageUrl,
                             isLost: report.isLost,
+                            createdAt: report.createdAt,
                             onTap: () {
                               Navigator.push(
                                 context,

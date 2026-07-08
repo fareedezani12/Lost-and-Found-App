@@ -8,12 +8,40 @@ import 'chat_room_screen.dart';
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
-  String formatTime(Timestamp? timestamp) {
+  String formatTime(BuildContext context, Timestamp? timestamp) {
     if (timestamp == null) return "";
 
     final date = timestamp.toDate();
+    final now = DateTime.now();
 
-    return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(date.year, date.month, date.day);
+
+    final difference = today.difference(messageDay).inDays;
+
+    if (difference == 0) {
+      return TimeOfDay.fromDateTime(date).format(context);
+    }
+
+    if (difference == 1) {
+      return "Yesterday";
+    }
+
+    if (difference < 7) {
+      const days = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+
+      return days[date.weekday - 1];
+    }
+
+    return "${date.day}/${date.month}";
   }
 
   @override
@@ -31,9 +59,13 @@ class ChatScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection("chats")
             .where("participants", arrayContains: uid)
+            .orderBy("lastMessageTime", descending: true)
             .snapshots(),
 
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text(snapshot.error.toString()));
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -133,18 +165,75 @@ class ChatScreen extends StatelessWidget {
                         },
                       ),
 
-                      subtitle: Text(
-                        data["lastMessage"] ?? "No messages",
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "📦 ${data["title"] ?? "Unknown Item"}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue,
+                              fontSize: 13,
+                            ),
+                          ),
 
-                        maxLines: 1,
+                          const SizedBox(height: 3),
 
-                        overflow: TextOverflow.ellipsis,
+                          Text(
+                            data["lastSenderId"] == uid
+                                ? "You: ${data["lastMessage"] ?? ""}"
+                                : data["lastMessage"] ?? "Start chatting...",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
 
-                      trailing: Text(
-                        formatTime(data["lastMessageTime"]),
+                      trailing: StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection("chats")
+                            .doc(chats[index].id)
+                            .collection("messages")
+                            .where("senderId", isNotEqualTo: uid)
+                            .where("isSeen", isEqualTo: false)
+                            .snapshots(),
 
-                        style: const TextStyle(fontSize: 12),
+                        builder: (context, unreadSnapshot) {
+                          final unreadCount = unreadSnapshot.hasData
+                              ? unreadSnapshot.data!.docs.length
+                              : 0;
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatTime(context, data["lastMessageTime"]),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              if (unreadCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    unreadCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
 
                       onTap: () {

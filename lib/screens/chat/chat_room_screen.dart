@@ -22,6 +22,15 @@ class ChatRoomScreen extends StatefulWidget {
 }
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      markMessagesAsSeen();
+    });
+  }
+
   final TextEditingController messageController = TextEditingController();
 
   final ScrollController scrollController = ScrollController();
@@ -53,6 +62,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
+    // Save the message
     await FirebaseFirestore.instance
         .collection("chats")
         .doc(widget.chatId)
@@ -64,12 +74,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           "isSeen": false,
         });
 
+    // Update chat preview
     await FirebaseFirestore.instance
         .collection("chats")
         .doc(widget.chatId)
         .update({
           "lastMessage": text,
           "lastMessageTime": FieldValue.serverTimestamp(),
+          "lastSenderId": uid,
         });
 
     messageController.clear();
@@ -83,6 +95,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
       }
     });
+  }
+
+  Future<void> markMessagesAsSeen() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final unreadMessages = await FirebaseFirestore.instance
+        .collection("chats")
+        .doc(widget.chatId)
+        .collection("messages")
+        .where("senderId", isNotEqualTo: uid)
+        .where("isSeen", isEqualTo: false)
+        .get();
+
+    for (final doc in unreadMessages.docs) {
+      await doc.reference.update({"isSeen": true});
+    }
   }
 
   @override
@@ -650,15 +678,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   }
 
                   final messages = snapshot.data!.docs;
-
-                  for (var doc in messages) {
-                    final msg = doc.data() as Map<String, dynamic>;
-
-                    if (msg["senderId"] != uid &&
-                        (msg["isSeen"] ?? false) == false) {
-                      doc.reference.update({"isSeen": true});
-                    }
-                  }
 
                   if (messages.isEmpty) {
                     return const Center(
