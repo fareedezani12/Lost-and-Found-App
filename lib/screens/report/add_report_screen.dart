@@ -199,21 +199,43 @@ class _AddReportScreenState extends State<AddReportScreen> {
 
             const SizedBox(height: 15),
 
-            DropdownButtonFormField(
+            DropdownButtonFormField<String>(
               initialValue: category,
+
+              decoration: const InputDecoration(
+                labelText: "Category",
+                border: OutlineInputBorder(),
+              ),
 
               items: const [
                 DropdownMenuItem(
                   value: "Electronics",
-                  child: Text("Electronics"),
+                  child: Text("📱 Electronics"),
                 ),
 
-                DropdownMenuItem(value: "Documents", child: Text("Documents")),
+                DropdownMenuItem(
+                  value: "Documents",
+                  child: Text("📄 Documents"),
+                ),
 
                 DropdownMenuItem(
                   value: "Accessories",
-                  child: Text("Accessories"),
+                  child: Text("⌚ Accessories"),
                 ),
+
+                DropdownMenuItem(value: "Wallet", child: Text("👛 Wallet")),
+
+                DropdownMenuItem(value: "Keys", child: Text("🔑 Keys")),
+
+                DropdownMenuItem(value: "Bags", child: Text("🎒 Bags")),
+
+                DropdownMenuItem(value: "ID Card", child: Text("🪪 ID Card")),
+
+                DropdownMenuItem(value: "Books", child: Text("📚 Books")),
+
+                DropdownMenuItem(value: "Clothing", child: Text("👕 Clothing")),
+
+                DropdownMenuItem(value: "Others", child: Text("📦 Others")),
               ],
 
               onChanged: (value) {

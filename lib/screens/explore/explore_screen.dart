@@ -23,6 +23,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
     "Electronics",
     "Documents",
     "Accessories",
+    "Wallet",
+    "Keys",
+    "Bags",
+    "ID Card",
+    "Books",
+    "Clothing",
+    "Others",
   ];
 
   @override

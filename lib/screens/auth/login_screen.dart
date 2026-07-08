@@ -11,7 +11,6 @@ import '../navigation/main_navigation.dart';
 import '../admin/admin_dashboard_screen.dart';
 
 import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
 
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
@@ -218,39 +217,89 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 15),
 
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ForgotPasswordScreen(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "Forgot password?",
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-
               const Spacer(),
 
               const Text("or"),
 
               const SizedBox(height: 20),
 
-              Container(
-                height: 55,
+              SizedBox(
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD9D9D9),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Continue with Google",
-                    style: TextStyle(fontSize: 22),
+                height: 55,
+                child: OutlinedButton.icon(
+                  icon: Image.asset(
+                    "assets/images/google_logo.jpg",
+                    height: 22,
                   ),
+                  label: const Text(
+                    "Continue with Google",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final credential = await context
+                          .read<AuthProvider>()
+                          .signInWithGoogle();
+
+                      if (credential == null) return;
+
+                      final user = credential.user;
+
+                      if (user != null) {
+                        final doc = await FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(user.uid)
+                            .get();
+
+                        final data = doc.data();
+
+                        if (!mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Google Sign-In Successful!"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        if (data?["role"] == "admin") {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminDashboardScreen(),
+                            ),
+                          );
+                        } else {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MainNavigation(),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Google Sign-In failed.\n$e"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
                 ),
               ),
 

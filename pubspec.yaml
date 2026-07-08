@@ -83,6 +83,7 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/images/lost-and-found-app-logo.png
+    - assets/images/google_logo.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
